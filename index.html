@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEROVERSE — Live Flight Radar</title>
+
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #07111f;
+    color: white;
+    overflow: hidden;
+}
+
+header {
+    height: 64px;
+    background: #0b1728;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    gap: 12px;
+    border-bottom: 1px solid #20334d;
+    position: relative;
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+    color: #55c7ff;
+    white-space: nowrap;
+}
+
+.logo span {
+    color: white;
+}
+
+.controls {
+    display: flex;
+    gap: 7px;
+    flex: 1;
+}
+
+button,
+select,
+input {
+    background: #12243a;
+    color: white;
+    border: 1px solid #294563;
+    border-radius: 7px;
+    padding: 9px 11px;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1a3654;
+}
+
+button.active {
+    background: #087fc1;
+    border-color: #1aa9ff;
+}
+
+.search {
+    width: 180px;
+}
+
+#map {
+    position: absolute;
+    top: 64px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.leaflet-container {
+    background: #07111f;
+}
+
+.panel {
+    position: absolute;
+    z-index: 900;
+    background: rgba(7, 17, 31, 0.94);
+    border: 1px solid #294563;
+    border-radius: 10px;
+    box-shadow: 0 10px 35px rgba(0,0,0,.45);
+}
+
+.status {
+    left: 15px;
+    top: 80px;
+    padding: 10px 13px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    background: #20e58b;
+    border-radius: 50%;
+    margin-right: 7px;
+}
+
+.details {
+    right: 15px;
+    top: 80px;
+    width: 310px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+    padding: 16px;
+    display: none;
+}
+
+.details.show {
+    display: block;
+}
+
+.details h2 {
+    margin: 0 0 12px;
+    color: #55c7ff;
+    font-size: 21px;
+}
+
+.info {
+    border-bottom: 1px solid #20334d;
+    padding: 8px 0;
+}
+
+.label {
+    color: #8da5bf;
+    font-size: 12px;
+}
+
+.value {
+    font-size: 15px;
+    margin-top: 2px;
+}
+
+.route {
+    margin-top: 15px;
+    padding: 12px;
+    background: #0c1d31;
+    border-radius: 8px;
+    border: 1px solid #25425f;
+}
+
+.route-title {
+    color: #55c7ff;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.airport {
+    margin: 7px 0;
+}
+
+.stats {
+    left: 15px;
+    bottom: 15px;
+    width: 320px;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding: 15px;
+    display: none;
+}
+
+.stats.show {
+    display: block;
+}
+
+.stats h2 {
+    margin-top: 0;
+    color: #55c7ff;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.stat-box {
+    background: #0c1d31;
+    border: 1px solid #25425f;
+    padding: 10px;
+    border-radius: 7px;
+}
+
+.stat-number {
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.stat-label {
+    color: #8da5bf;
+    font-size: 11px;
+}
+
+.top-country {
+    padding: 5px 0;
+    border-bottom: 1px solid #20334d;
+}
+
+.following {
+    right: 15px;
+    bottom: 15px;
+    padding: 10px 13px;
+    display: none;
+}
+
+.following.show {
+    display: block;
+}
+
+.plane-icon {
+    font-size: 23px;
+    text-align: center;
+    filter: drop-shadow(0 0 4px #55c7ff);
+}
+
+.selected-plane {
+    font-size: 28px;
+    filter: drop-shadow(0 0 8px #ffcc00);
+}
+
+.popup-title {
+    font-weight: bold;
+    color: #087fc1;
+}
+
+@media(max-width:800px) {
+    header {
+        height: auto;
+        min-height: 64px;
+        flex-wrap: wrap;
+        padding: 8px;
+    }
+
+    .controls {
+        overflow-x: auto;
+        order: 3;
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    #map {
+        top: 105px;
+    }
+
+    .search {
+        width: 130px;
+    }
+
+    .details {
+        top: 115px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: 55vh;
+    }
+
+    .status {
+        top: 115px;
+        left: 8px;
+    }
+
+    .stats {
+        left: 8px;
+        bottom: 8px;
+        width: calc(100% - 16px);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">✈ AERO<span>VERSE</span></div>
+
+    <div class="controls">
+        <button id="nigeriaBtn" onclick="changeRegion('nigeria')">Nigeria</button>
+        <button id="africaBtn" onclick="changeRegion('africa')" class="active">Africa</button>
+        <button id="worldBtn" onclick="changeRegion('world')">World</button>
+
+        <input
+            id="search"
+            class="search"
+            placeholder="Search callsign / ICAO24"
+            oninput="searchAircraft()"
+        >
+
+        <button onclick="loadFlights()">↻ Refresh</button>
+        <button onclick="toggleStats()">📊 Statistics</button>
+    </div>
+</header>
+
+<div id="map"></div>
+
+<div class="panel status">
+    <span class="status-dot"></span>
+    <span id="statusText">Connecting...</span>
+    <br>
+    <small id="countText">Aircraft: 0</small>
+</div>
+
+<div id="details" class="panel details">
+    <h2 id="detailTitle">Aircraft</h2>
+
+    <div class="info">
+        <div class="label">Airline</div>
+        <div class="value" id="airline">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">ICAO Airline Code</div>
+        <div class="value" id="airlineCode">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Callsign</div>
+        <div class="value" id="callsign">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">ICAO24</div>
+        <div class="value" id="icao24">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Country</div>
+        <div class="value" id="country">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Altitude</div>
+        <div class="value" id="altitude">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Speed</div>
+        <div class="value" id="speed">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Heading</div>
+        <div class="value" id="heading">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Vertical Rate</div>
+        <div class="value" id="verticalRate">—</div>
+    </div>
+
+    <div class="info">
+        <div class="label">Status</div>
+        <div class="value" id="flightStatus">—</div>
+    </div>
+
+    <div class="route">
+        <div class="route-title">🛫 Flight Route</div>
+
+        <div class="airport">
+            <div class="label">Departure</div>
+            <div class="value" id="departure">Searching...</div>
+        </div>
+
+        <div class="airport">
+            <div class="label">Destination</div>
+            <div class="value" id="destination">Searching...</div>
+        </div>
+
+        <small id="routeNote" style="color:#8da5bf;">
+            Route data is being checked.
+        </small>
+    </div>
+
+    <br>
+
+    <button onclick="followSelected()">🎯 Follow Flight</button>
+    <button onclick="closeDetails()">Close</button>
+</div>
+
+<div id="stats" class="panel stats">
+    <h2>📊 Aviation Statistics</h2>
+
+    <div class="stat-grid">
+        <div class="stat-box">
+            <div class="stat-number" id="totalStat">0</div>
+            <div class="stat-label">Total Aircraft</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="airborneStat">0</div>
+            <div class="stat-label">Airborne</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="groundStat">0</div>
+            <div class="stat-label">On Ground</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="avgAltitudeStat">0</div>
+            <div class="stat-label">Avg Altitude ft</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="fastestStat">0</div>
+            <div class="stat-label">Fastest kt</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="highestStat">0</div>
+            <div class="stat-label">Highest ft</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="climbingStat">0</div>
+            <div class="stat-label">Climbing</div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number" id="descendingStat">0</div>
+            <div class="stat-label">Descending</div>
+        </div>
+    </div>
+
+    <h3>🌍 Top Countries</h3>
+    <div id="countries"></div>
+</div>
+
+<div id="following" class="panel following">
+    🎯 Following selected aircraft
+    <button onclick="stopFollowing()">⛔ Stop</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const map = L.map("map").setView([8, 8], 4);
+
+L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom: 18,
+        attribution: "&copy; OpenStreetMap contributors"
+    }
+).addTo(map);
+
+let markers = {};
+let trails = {};
+let routeLines = {};
+let aircraftData = [];
+let currentRegion = "africa";
+let selectedAircraft = null;
+let following = false;
+
+const AIRLINES = {
+    AAL: "American Airlines",
+    AFR: "Air France",
+    BAW: "British Airways",
+    DLH: "Lufthansa",
+    KLM: "KLM",
+    UAL: "United Airlines",
+    UAE: "Emirates",
+    QTR: "Qatar Airways",
+    ETH: "Ethiopian Airlines",
+    SAA: "South African Airways",
+    KQA: "Kenya Airways",
+    RAM: "Royal Air Maroc",
+    TAP: "TAP Air Portugal",
+    IBE: "Iberia",
+    RYR: "Ryanair",
+    EZY: "easyJet",
+    THY: "Turkish Airlines",
+    SWR: "Swiss",
+    AUA: "Austrian Airlines",
+    FIN: "Finnair",
+    SAS: "Scandinavian Airlines",
+    KAL: "Korean Air",
+    CPA: "Cathay Pacific",
+    JAL: "Japan Airlines",
+    ANA: "All Nippon Airways",
+    AIC: "Air India",
+    IGO: "IndiGo",
+    ETD: "Etihad Airways",
+    ELY: "El Al",
+    MEA: "Middle East Airlines",
+    MSR: "EgyptAir",
+    GIA: "Garuda Indonesia",
+    MAS: "Malaysia Airlines",
+    SIA: "Singapore Airlines",
+    THA: "Thai Airways",
+    AFL: "Aeroflot",
+    AZA: "ITA Airways",
+    DAL: "Delta Air Lines",
+    SWA: "Southwest Airlines",
+    ACA: "Air Canada",
+    ASA: "Alaska Airlines",
+    JBU: "JetBlue",
+    VIR: "Virgin Atlantic",
+    VLG: "Vueling",
+    WZZ: "Wizz Air",
+    APK: "Air Peace",
+    ANP: "Arik Air",
+    DAN: "Dana Air"
+};
+
+function getAirline(callsign) {
+    if (!callsign) {
+        return {
+            name: "Unknown",
+            code: "—"
+        };
+    }
+
+    const code = callsign.substring(0, 3).toUpperCase();
+
+    return {
+        name: AIRLINES[code] || "Unknown / Unlisted Airline",
+        code: code
+    };
+}
+
+function planeIcon(selected = false) {
+    return L.divIcon({
+        className: "",
+        html: `<div class="${selected ? "plane-icon selected-plane" : "plane-icon"}">✈</div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+    });
+}
+
+function changeRegion(region) {
+    currentRegion = region;
+
+    document.getElementById("nigeriaBtn").classList.remove("active");
+    document.getElementById("africaBtn").classList.remove("active");
+    document.getElementById("worldBtn").classList.remove("active");
+
+    document.getElementById(region + "Btn").classList.add("active");
+
+    if (region === "nigeria") {
+        map.setView([9.1, 8.7], 5);
+    } else if (region === "africa") {
+        map.setView([8, 8], 4);
+    } else {
+        map.setView([20, 0], 2);
+    }
+
+    loadFlights();
+}
+
+async function loadFlights() {
+    document.getElementById("statusText").textContent = "Updating live radar...";
+
+    try {
+        const response = await fetch(
+            `/api/flights?region=${encodeURIComponent(currentRegion)}`
+        );
+
+        const data = await response.json();
+
+        if (!data.success) {
+            throw new Error(data.error || "Radar error");
+        }
+
+        aircraftData = data.aircraft || [];
+
+        updateMarkers();
+        updateStatistics();
+
+        document.getElementById("statusText").textContent = "LIVE RADAR";
+        document.getElementById("countText").textContent =
+            "Aircraft: " + aircraftData.length;
+
+    } catch (error) {
+        console.error(error);
+
+        document.getElementById("statusText").textContent =
+            "Radar connection error";
+
+        document.getElementById("countText").textContent =
+            error.message;
+    }
+}
+
+function updateMarkers() {
+    const activeIds = new Set();
+
+    aircraftData.forEach(plane => {
+        const id = plane.icao24;
+        activeIds.add(id);
+
+        const lat = plane.latitude;
+        const lon = plane.longitude;
+
+        if (!markers[id]) {
+            markers[id] = L.marker(
+                [lat, lon],
+                {
+                    icon: planeIcon(false)
+                }
+            ).addTo(map);
+
+            markers[id].on("click", () => {
+                selectAircraft(id);
+            });
+        } else {
+            markers[id].setLatLng([lat, lon]);
+        }
+
+        const airline = getAirline(plane.callsign);
+
+        markers[id].bindPopup(`
+            <div class="popup-title">
+                ✈ ${plane.callsign || "UNKNOWN"}
+            </div>
+            <b>${airline.name}</b><br>
+            ICAO24: ${plane.icao24}<br>
+            Country: ${plane.country}<br>
+            Altitude: ${formatAltitude(plane.altitude)}<br>
+            Speed: ${formatSpeed(plane.velocity)}
+        `);
+
+        if (!trails[id]) {
+            trails[id] = [];
+        }
+
+        trails[id].push([lat, lon]);
+
+        if (trails[id].length > 30) {
+            trails[id].shift();
+        }
+
+        if (trails[id].length > 1) {
+            if (!routeLines[id]) {
+                routeLines[id] = L.polyline(
+                    trails[id],
+                    {
+                        weight: 2,
+                        opacity: 0.45
+                    }
+                ).addTo(map);
+            } else {
+                routeLines[id].setLatLngs(trails[id]);
+            }
+        }
+    });
+
+    Object.keys(markers).forEach(id => {
+        if (!activeIds.has(id)) {
+            map.removeLayer(markers[id]);
+            delete markers[id];
+
+            if (routeLines[id]) {
+                map.removeLayer(routeLines[id]);
+                delete routeLines[id];
+            }
+        }
+    });
+
+    if (selectedAircraft && activeIds.has(selectedAircraft)) {
+        markers[selectedAircraft].setIcon(planeIcon(true));
+
+        if (following) {
+            const plane = aircraftData.find(
+                p => p.icao24 === selectedAircraft
+            );
+
+            if (plane) {
+                map.setView(
+                    [plane.latitude, plane.longitude],
+                    Math.max(map.getZoom(), 6)
+                );
+            }
+        }
+    }
+}
+
+function selectAircraft(id) {
+    selectedAircraft = id;
+
+    Object.keys(markers).forEach(key => {
+        markers[key].setIcon(planeIcon(key === id));
+    });
+
+    const plane = aircraftData.find(
+        p => p.icao24 === id
+    );
+
+    if (!plane) return;
+
+    showDetails(plane);
+}
+
+async function showDetails(plane) {
+    document.getElementById("details").classList.add("show");
+
+    const airline = getAirline(plane.callsign);
+
+    document.getElementById("detailTitle").textContent =
+        "✈ " + (plane.callsign || "UNKNOWN");
+
+    document.getElementById("airline").textContent =
+        airline.name;
+
+    document.getElementById("airlineCode").textContent =
+        airline.code;
+
+    document.getElementById("callsign").textContent =
+        plane.callsign || "UNKNOWN";
+
+    document.getElementById("icao24").textContent =
+        plane.icao24;
+
+    document.getElementById("country").textContent =
+        plane.country;
+
+    document.getElementById("altitude").textContent =
+        formatAltitude(plane.altitude);
+
+    document.getElementById("speed").textContent =
+        formatSpeed(plane.velocity);
+
+    document.getElementById("heading").textContent =
+        plane.heading == null
+        ? "—"
+        : Math.round(plane.heading) + "°";
+
+    document.getElementById("verticalRate").textContent =
+        formatVerticalRate(plane.vertical_rate);
+
+    document.getElementById("flightStatus").textContent =
+        plane.on_ground ? "On Ground" : "Airborne";
+
+    document.getElementById("departure").textContent =
+        "Checking route...";
+
+    document.getElementById("destination").textContent =
+        "Checking route...";
+
+    document.getElementById("routeNote").textContent =
+        "Checking OpenSky route information...";
+
+    try {
+        const response = await fetch(
+            `/api/route/${encodeURIComponent(plane.icao24)}`
+        );
+
+        const route = await response.json();
+
+        if (route.success && route.route) {
+
+            document.getElementById("departure").textContent =
+                formatAirport(
+                    route.route.departure,
+                    route.route.departure_name
+                );
+
+            document.getElementById("destination").textContent =
+                formatAirport(
+                    route.route.destination,
+                    route.route.destination_name
+                );
+
+            document.getElementById("routeNote").textContent =
+                route.route.note || "Route information supplied by OpenSky.";
+        } else {
+            document.getElementById("departure").textContent =
+                "Not available";
+
+            document.getElementById("destination").textContent =
+                "Not available";
+
+            document.getElementById("routeNote").textContent =
+                route.message ||
+                "No verified route information is currently available.";
+        }
+
+    } catch (error) {
+        document.getElementById("departure").textContent =
+            "Not available";
+
+        document.getElementById("destination").textContent =
+            "Not available";
+
+        document.getElementById("routeNote").textContent =
+            "Route information unavailable.";
+    }
+}
+
+function formatAirport(code, name) {
+    if (!code) return "Unknown";
+
+    if (name) {
+        return code + " — " + name;
+    }
+
+    return code;
+}
+
+function formatAltitude(meters) {
+    if (meters == null) return "—";
+
+    const feet = meters * 3.28084;
+
+    return Math.round(feet).toLocaleString() + " ft";
+}
+
+function formatSpeed(ms) {
+    if (ms == null) return "—";
+
+    const knots = ms * 1.94384;
+
+    return Math.round(knots) + " kt";
+}
+
+function formatVerticalRate(ms) {
+    if (ms == null) return "—";
+
+    const feetPerMinute = ms * 196.8504;
+
+    if (Math.abs(feetPerMinute) < 50) {
+        return "Stable";
+    }
+
+    if (feetPerMinute > 0) {
+        return "Climbing " +
+            Math.round(feetPerMinute) +
+            " ft/min";
+    }
+
+    return "Descending " +
+        Math.abs(Math.round(feetPerMinute)) +
+        " ft/min";
+}
+
+function closeDetails() {
+    document.getElementById("details").classList.remove("show");
+    selectedAircraft = null;
+    following = false;
+
+    Object.keys(markers).forEach(id => {
+        markers[id].setIcon(planeIcon(false));
+    });
+
+    document.getElementById("following").classList.remove("show");
+}
+
+function followSelected() {
+    if (!selectedAircraft) return;
+
+    following = true;
+
+    document.getElementById("following").classList.add("show");
+
+    const plane = aircraftData.find(
+        p => p.icao24 === selectedAircraft
+    );
+
+    if (plane) {
+        map.setView(
+            [plane.latitude, plane.longitude],
+            7
+        );
+    }
+}
+
+function stopFollowing() {
+    following = false;
+
+    document.getElementById("following").classList.remove("show");
+}
+
+function toggleStats() {
+    document.getElementById("stats").classList.toggle("show");
+
+    updateStatistics();
+}
+
+function updateStatistics() {
+    const total = aircraftData.length;
+
+    const airborne = aircraftData.filter(
+        p => !p.on_ground
+    ).length;
+
+    const ground = aircraftData.filter(
+        p => p.on_ground
+    ).length;
+
+    const altitudes = aircraftData
+        .map(p => p.altitude)
+        .filter(v => v != null);
+
+    const avgAltitude =
+        altitudes.length
+        ? altitudes.reduce((a,b) => a+b, 0) /
+          altitudes.length
+        : 0;
+
+    const speeds = aircraftData
+        .map(p => p.velocity)
+        .filter(v => v != null);
+
+    const fastest =
+        speeds.length
+        ? Math.max(...speeds) * 1.94384
+        : 0;
+
+    const highest =
+        altitudes.length
+        ? Math.max(...altitudes) * 3.28084
+        : 0;
+
+    const climbing = aircraftData.filter(
+        p => p.vertical_rate != null &&
+             p.vertical_rate > 0.25
+    ).length;
+
+    const descending = aircraftData.filter(
+        p => p.vertical_rate != null &&
+             p.vertical_rate < -0.25
+    ).length;
+
+    document.getElementById("totalStat").textContent =
+        total.toLocaleString();
+
+    document.getElementById("airborneStat").textContent =
+        airborne.toLocaleString();
+
+    document.getElementById("groundStat").textContent =
+        ground.toLocaleString();
+
+    document.getElementById("avgAltitudeStat").textContent =
+        Math.round(avgAltitude * 3.28084).toLocaleString();
+
+    document.getElementById("fastestStat").textContent =
+        Math.round(fastest).toLocaleString();
+
+    document.getElementById("highestStat").textContent =
+        Math.round(highest).toLocaleString();
+
+    document.getElementById("climbingStat").textContent =
+        climbing.toLocaleString();
+
+    document.getElementById("descendingStat").textContent =
+        descending.toLocaleString();
+
+    const countries = {};
+
+    aircraftData.forEach(p => {
+        const country = p.country || "Unknown";
+
+        countries[country] =
+            (countries[country] || 0) + 1;
+    });
+
+    const sorted = Object.entries(countries)
+        .sort((a,b) => b[1] - a[1])
+        .slice(0, 10);
+
+    document.getElementById("countries").innerHTML =
+        sorted.map(([country,count]) => `
+            <div class="top-country">
+                ${country}
+                <b style="float:right">${count}</b>
+            </div>
+        `).join("");
+}
+
+function searchAircraft() {
+    const text =
+        document.getElementById("search")
+        .value
+        .trim()
+        .toLowerCase();
+
+    if (!text) return;
+
+    const plane = aircraftData.find(p => {
+
+        const airline =
+            getAirline(p.callsign).name.toLowerCase();
+
+        return (
+            (p.callsign || "").toLowerCase().includes(text) ||
+            (p.icao24 || "").toLowerCase().includes(text) ||
+            (p.country || "").toLowerCase().includes(text) ||
+            airline.includes(text)
+        );
+    });
+
+    if (plane) {
+        map.setView(
+            [plane.latitude, plane.longitude],
+            8
+        );
+
+        selectAircraft(plane.icao24);
+
+        markers[plane.icao24].openPopup();
+    }
+}
+
+loadFlights();
+
+/*
+OpenSky standard authenticated access should not be hammered.
+90 seconds keeps the application much more reasonable for API usage.
+*/
+setInterval(loadFlights, 90000);
+</script>
+
+</body>
+</html>
