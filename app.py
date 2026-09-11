@@ -99,15 +99,25 @@ def get_token():
             "OpenSky credentials are missing from .env"
         )
 
-    response = requests.post(
-        TOKEN_URL,
-        data={
-            "grant_type": "client_credentials",
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET
-        },
-        timeout=30
-    )
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                TOKEN_URL,
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": CLIENT_ID,
+                    "client_secret": CLIENT_SECRET
+                },
+                timeout=60
+            )
+            response.raise_for_status()
+            break
+        except requests.RequestException as e:
+            last_error = e
+            if attempt == 2:
+                raise last_error
+            time.sleep(3)
 
     response.raise_for_status()
 
