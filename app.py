@@ -109,7 +109,7 @@ def get_token():
                     "client_id": CLIENT_ID,
                     "client_secret": CLIENT_SECRET
                 },
-                timeout=60
+                timeout=15
             )
             response.raise_for_status()
             break
