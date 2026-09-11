@@ -115,8 +115,9 @@ def get_token():
             break
         except requests.RequestException as e:
             last_error = e
+            print(f"OpenSky connection attempt {attempt + 1} failed: {e}")
             if attempt == 2:
-                raise last_error
+                return None
             time.sleep(3)
 
     response.raise_for_status()
@@ -135,8 +136,13 @@ def get_token():
 
 
 def auth_headers():
+    current_token = get_token()
+
+    if not current_token:
+        return None
+
     return {
-        "Authorization": f"Bearer {get_token()}"
+        "Authorization": f"Bearer {current_token}"
     }
 
 
